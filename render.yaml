@@ -1,0 +1,44 @@
+services:
+  - type: web
+    name: nexus-backend
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.main:app --bind 0.0.0.0:$PORT --workers 2
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nexus-db
+          property: connectionString
+      - key: CORS_ORIGINS
+        value: "https://nexus-frontend.onrender.com"
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: MODEL_PATH
+        value: "./models/lightgbm_model.pkl"
+    healthCheckPath: /api/health
+
+  - type: web
+    name: nexus-frontend
+    runtime: static
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: "https://nexus-backend.onrender.com"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+databases:
+  - name: nexus-db
+    plan: free
+    databaseName: nexus
+    user: nexus
+    region: oregon
