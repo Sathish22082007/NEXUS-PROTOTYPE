@@ -3,7 +3,6 @@ services:
     name: nexus-backend
     runtime: python
     region: oregon
-    plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app --bind 0.0.0.0:$PORT --workers 2
@@ -23,8 +22,6 @@ services:
   - type: web
     name: nexus-frontend
     runtime: static
-    plan: free
-    rootDir: .
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:
@@ -37,7 +34,6 @@ services:
 
 databases:
   - name: nexus-db
-    plan: free
     databaseName: nexus
     user: nexus
     region: oregon
