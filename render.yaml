@@ -23,7 +23,6 @@ services:
   - type: web
     name: nexus-frontend
     runtime: static
-    region: oregon
     plan: free
     rootDir: .
     buildCommand: npm install && npm run build
