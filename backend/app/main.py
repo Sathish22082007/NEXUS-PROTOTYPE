@@ -1,25 +1,34 @@
-import json
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import create_all, SessionLocal
 from app.db.seed import seed_database
+from app.models.models import Employee
 from app.routes.employees import router
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Starting NEXUS backend...")
+    logger.info("Starting NEXUS backend...")
     create_all()
     db = SessionLocal()
     try:
-        seed_database(db)
+        existing = db.query(Employee).count()
+        if existing == 0:
+            seed_database(db)
+            logger.info("Database seeded with initial data.")
+        else:
+            logger.info(f"Database already has {existing} employees, skipping seed.")
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
     finally:
         db.close()
-    print("Database initialized and seeded.")
     yield
-    print("Shutting down NEXUS backend.")
+    logger.info("Shutting down NEXUS backend.")
 
 
 def create_app() -> FastAPI:
