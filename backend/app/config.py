@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
 from functools import lru_cache
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -14,12 +17,19 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173"
 
     def model_post_init(self, __context) -> None:
-        # Render provides postgres:// URLs; SQLAlchemy needs postgresql+psycopg://
-        url = os.environ.get("DATABASE_URL", self.DATABASE_URL)
+        raw_url = os.environ.get("DATABASE_URL", "").strip()
+        if not raw_url:
+            logger.warning("DATABASE_URL is not set! Using default local URL.")
+            return
+
+        url = raw_url
         if url.startswith("postgres://"):
-            self.DATABASE_URL = url.replace("postgres://", "postgresql+psycopg://", 1)
+            url = url.replace("postgres://", "postgresql+psycopg://", 1)
         elif url.startswith("postgresql://") and "+psycopg" not in url:
-            self.DATABASE_URL = url.replace("postgresql://", "postgresql+psycopg://", 1)
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
+
+        self.DATABASE_URL = url
+        logger.info(f"DATABASE_URL configured: {url[:30]}...")
 
 
 @lru_cache

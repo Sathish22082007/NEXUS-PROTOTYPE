@@ -10,7 +10,10 @@ class Base(DeclarativeBase):
     pass
 
 
-engine = create_engine(get_settings().DATABASE_URL, echo=False, pool_pre_ping=True)
+settings = get_settings()
+logger.info(f"Connecting to database: {settings.DATABASE_URL[:30]}...")
+
+engine = create_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -29,4 +32,5 @@ def create_all():
         if "already exists" in str(e) or "duplicate key" in str(e):
             logger.warning("Enum types already exist, skipping creation.")
         else:
+            logger.error(f"Error creating tables: {e}")
             raise
